@@ -1,6 +1,6 @@
 # 2024年度応用心理学Ⅰ「データ収集後探索的解析（テキストマイニング）」講義資料
 
-2024年島根大学人間科学部「応用心理学Ⅰ」データ収集後探索的解析（テキストマイニング）の講義資料です。
+2024年度島根大学人間科学部「応用心理学Ⅰ」データ収集後探索的解析（テキストマイニング）の講義資料です。
 
 講義で使用したスライド、分析のデータよびソースコードを公開します。
 
@@ -67,7 +67,11 @@ system('sudo apt-get install -y mecab-ipadic-utf8', intern=TRUE)
 install.packages("RMeCab", repos = "https://rmecab.jp/R")
 ```
 
+
++ GoogleColabratory上での実行例は、[この講義の共有フォルダ内に](https://drive.google.com/drive/folders/10G1D1VMx48wgrmHgJ-ZeNQMPqwtf9oPc?usp=drive_link)置いています。
+
 + rファイルはRのソースコードで、より詳しいコードの解説と、ネットワークグラフ用のソースコードが入っています。一行ずつ実行していくことで、分析を再現できます
+
 
 ### ソースコードの実行について
 
