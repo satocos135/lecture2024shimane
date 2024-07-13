@@ -17,7 +17,7 @@ files = c(
     './data/interview/応用Ⅰ整理データ_1班.xlsx',
     './data/interview/応用Ⅰ整理データ_2班.xlsx',
     './data/interview/応用Ⅰ整理データ_3班.xlsx',
-    './data/interview/応用Ⅰ整理データ_4班.xlsx',
+    './data/interview/応用Ⅰ整理データ_4班再提出.xlsx',
     './data/interview/応用Ⅰ整理データ_5班.xlsx'
 )
 
@@ -35,6 +35,9 @@ for(i in 1:5){
 df %>% dim()
 table(df$group, df$person)
 
+# contentが空の行を除く
+df = df[!is.na(df$content),]
+
 # データセットの成形
 # NAを0に変える
 df[is.na(df)] = 0
@@ -49,37 +52,71 @@ counted
 excluded = counted[counted < 10] %>% names()
 
 
+
+
 df = df %>% filter(!str_detect(person, '学'))
 df = df %>% filter(! person %in% excluded)
 
 
 df$person %>% table()
 
+
+
+
+# x = df %>% filter(str_detect(person, '0')) 
+# x[, c('group', 'id')]
+
+df = df[df$person != '0', ]
+
+
 # 課題1 
+# とりあえず全体像を見てみる(ストップワードなし)
+groups = df %>% group_by(group) %>% summarise(text = paste0(content, collapse=''))
+groups = as.data.frame(groups)  # data.frameに変換
+
+count_noun = docMatrixDF(groups[,'text'], pos=c('名詞'))
+count_noun %>% dim()
+
+freq_noun = count_noun %>% rowSums()
+freq_noun %>% sort() %>% tail(30) %>% barplot(horiz=T, las=1, main='Top 30 nouns', xlab='Frequency', cex.names=0.5)
+
+# cexパラメータで適宜文字サイズを調整(大きすぎると全部が表示されなくなる)
+freq_noun %>% sort() %>% tail(30) %>% barplot(horiz=T, las=1, main='Top 30 nouns', xlab='Frequency', cex.names=1)
+
+# xlimでxの表示範囲を変えられる
+freq_noun %>% sort() %>% tail(30) %>% barplot(horiz=T, las=1, main='Top 30 nouns', xlab='Frequency', cex.names=1, xlim=c(0, 400))
+freq_noun %>% sort() %>% tail(30) 
+
+
 # クリーニング
 # 括弧の部分を削る
 
+# 丸括弧
 df$content %>% str_extract_all('[(（][^)）]+[)）]')
 df$content = df$content %>% str_replace_all('[(（][^)）]+[)）]', '')
 
-# 謎のカタカナ
-df$content = df$content %>% str_replace('[ァ-ヴ]+$', '')
+
+df$content %>% str_extract_all('\\[[^\\]]+\\]')
+df$content = df$content %>% str_replace_all('\\[[^\\]]+\\]', '')
 
 
 # 表記ゆれ
-# 子ども -> 子供
-# あたし -> 私
-df$content = df$content %>% str_replace_all('あたし', '私')
-df$content = df$content %>% str_replace_all('わたし', '私')
+df$content %>% str_extract_all('あたし|私|わたし')
+df$content = df$content %>% str_replace_all('あたし|わたし', '私')
+
+df$content %>% str_extract_all('子ども|子供')
 df$content = df$content %>% str_replace_all('子供', '子ども')
+
+df$content %>% str_extract_all('みなさん|皆さん')
 df$content = df$content %>% str_replace_all('みなさん', '皆さん')
-df$content = df$content %>% str_replace_all('笹巻き', '笹巻')
+
+
 
 # ストップワード
-stopwords = c('ん', 'こと', 'それ', 'の', 'よう', 'ところ', 'さん',
-              '何', 'ぉ', 'ー', 'とき', 'もの', 'たち', 'あれ', 'なか', 'とき',
-              'そこ', '中', '話', 'なん', 'みたい', 'これ', 'そう', 'わけ', 
-              '方', '時', '日', 'ら', 'とこ', '笑', 'ここ', '感じ', '年', '大', '回', '相槌', '上')
+stopwords = c('人', 'こと', 'それ', 'ん', 'の', '時', 'よう', 
+              'これ', 'さん', '方', '何',  'ところ','あれ', 'ー', '一', 
+              'ここ', 'もの', 'みたい', 'ちょ', '二', 'もん', 'とこ', 'とき'
+              )
 # シンボル
 symbols = '^[0-9０-９()（）,.ー\\-∼～~〜一十、。…!！?？]+$'
 
@@ -94,27 +131,26 @@ count_noun %>% dim()
 
 # グループをまとめたもの
 freq_noun = count_noun %>% rowSums()
-freq_noun %>% sort() %>% tail(30) %>% barplot(horiz=T, las=1, main='Top 30 nouns', xlab='Frequency', cex.names=0.5)
+# freq_noun %>% sort() %>% tail(30) %>% barplot(horiz=T, las=1, main='Top 30 nouns', xlab='Frequency', cex.names=1.0)
 
-
-
-freq_noun[(! names(freq_noun) %in% stopwords) & !str_detect(names(freq_noun), symbols)] %>% sort() %>% tail(30) %>% barplot(horiz=T, las=1, main='Top 30 nouns', xlab='Frequency', cex.names=0.5)
+freq_noun[(! names(freq_noun) %in% stopwords) & !str_detect(names(freq_noun), symbols)] %>% sort() %>% tail(30) %>% barplot(horiz=T, las=1, main='Top 30 nouns', xlab='Frequency', cex.names=1.0)
 freq_noun[(names(freq_noun) %in% stopwords) | str_detect(names(freq_noun), symbols)]
+
+count_noun[(! rownames(count_noun) %in% stopwords) & (!str_detect(rownames(count_noun), symbols)), 'ROW.1'] %>% sort() %>% tail(30) %>% barplot(horiz=T, las=1, main='Top 30 nouns', xlab='Frequency', cex.names=0.5)
 
 # 課題2
 # グループごとの頻出語
 
-count_noun[(! rownames(count_noun) %in% stopwords) & (!str_detect(rownames(count_noun), symbols)), 'ROW.1'] %>% sort() %>% tail(30) %>% barplot(horiz=T, las=1, main='Top 30 nouns', xlab='Frequency', cex.names=0.5)
 
 # 関数化しておく
 remove_stopwords = function(df, stopwords, symbols){
     return(df[(! rownames(df) %in% stopwords) & (!str_detect(rownames(df), symbols)),]) 
 }
-remove_stopwords(count_noun, stopwords, symbols)[,'ROW.1'] %>% sort() %>% tail(30) %>% barplot(horiz=T, las=1, main='Top 30 nouns', xlab='Frequency', cex.names=0.5)
-remove_stopwords(count_noun, stopwords, symbols)[,'ROW.2'] %>% sort() %>% tail(30) %>% barplot(horiz=T, las=1, main='Top 30 nouns', xlab='Frequency', cex.names=0.5)
-remove_stopwords(count_noun, stopwords, symbols)[,'ROW.3'] %>% sort() %>% tail(30) %>% barplot(horiz=T, las=1, main='Top 30 nouns', xlab='Frequency', cex.names=0.5)
+remove_stopwords(count_noun, stopwords, symbols)[,'ROW.1'] %>% sort() %>% tail(30) %>% barplot(horiz=T, las=1, main='Top 30 nouns (group 1)', xlab='Frequency', cex.names=0.5)
+remove_stopwords(count_noun, stopwords, symbols)[,'ROW.2'] %>% sort() %>% tail(30) %>% barplot(horiz=T, las=1, main='Top 30 nouns (group 2)', xlab='Frequency', cex.names=0.5)
+remove_stopwords(count_noun, stopwords, symbols)[,'ROW.3'] %>% sort() %>% tail(30) %>% barplot(horiz=T, las=1, main='Top 30 nouns (group 3)', xlab='Frequency', cex.names=0.5)
 remove_stopwords(count_noun, stopwords, symbols)[,'ROW.4'] %>% sort() %>% tail(30) %>% barplot(horiz=T, las=1, main='Top 30 nouns', xlab='Frequency', cex.names=0.5)
-remove_stopwords(count_noun, stopwords, symbols)[,'ROW.5'] %>% sort() %>% tail(30) %>% barplot(horiz=T, las=1, main='Top 30 nouns', xlab='Frequency', cex.names=0.5)
+remove_stopwords(count_noun, stopwords, symbols)[,'ROW.5'] %>% sort() %>% tail(30) %>% barplot(horiz=T, las=1, main='Top 30 nouns (group 5)', xlab='Frequency', cex.names=0.5)
 
 # 課題3 
 # TFIDFを求める
@@ -132,27 +168,11 @@ for(i in 1:5){
 
 par(mfrow=c(1,1)) # 設定をもとに戻す
 
-# TFIDFの結果のなかから見てみる
-df[str_detect(df$content, 'ぎゃ'), 'content'] # 擬音→除外
-df[str_detect(df$content, 'とり'), 'content'] # 方言 ~しとる の活用
-df[str_detect(df$content, 'ろう'), 'content'] # 分析ミス
-df[str_detect(df$content, 'ばん'), 'content'] # 分析ミス
-
 
 # 課題4
-# 列名を変える(#だとコメント扱いになってしまうので)
+# 列名を変える(#だとコメント扱いになってしまうので
 colnames(df) = colnames(df) %>% str_replace('#', '')
 topics = colnames(df)[5:9]
-
-# 文字列として読み込まれているので数値データに変換
-df$basic
-
-df$basic = as.numeric(df$basic)
-df$childhood = as.numeric(df$childhood)
-df$hometown = as.numeric(df$hometown)
-df$densho = as.numeric(df$densho)
-df$zokushin = as.numeric(df$zokushin)
-df[is.na(df)] = 0
 
 
 df[topics]
@@ -213,6 +233,7 @@ net = d %>%
 net %>% dim()
 net %>% graph_from_data_frame() %>% as.undirected() %>% tkplot(vertex.color='SkyBlue', vertex.size=22)
 
+# 表示用の関数を作る
 show_cooc = function(column, min_freq){
     res = map(df_topic[df_topic[, column] == 1, 'content'], get_cooc, pos=c('名詞'), stopwords=stopwords, regex=symbols, with_pos=T) %>% unlist() %>% table()
     d = parse_cooc(names(res), as.vector(res))
