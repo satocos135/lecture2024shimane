@@ -23,7 +23,7 @@ get_cooc = function(string, # 分析する文字列
                     regex='', # 除外するシンボルの正規表現
                     dic='' # MeCabの辞書のパス
                     ){
-    if(length(string) == 0){
+    if(str_length(string) == 0){
         return(c())
     }
     words = RMeCabC(string, 1, dic=dic) %>% unlist()
@@ -32,7 +32,7 @@ get_cooc = function(string, # 分析する文字列
         # 重複なしにする
         targets = targets[!duplicated(targets)]
     }
-    if(length(regex) > 0){
+    if(str_length(regex) > 0){
         targets = targets[!str_detect(targets, regex)]
     }
     if(length(stopwords)){
